@@ -1,0 +1,42 @@
+model:
+  n_layers: 16
+  hidden_sz: 2048
+  inter_sz: 5120
+  n_q_heads: 16
+  n_kv_heads: 16
+  head_dim: 128
+  vocab_sz: 257540
+  precision: "bf16"
+  sdpa_precision: "bf16"
+  glu: true
+  rotary_embeds: true
+  dropout: false
+  tie_embeddings: false
+  moe:
+    n_experts: 128
+    experts_per_token: 3
+    capacity_factor: 1
+    expert_inter_sz: 1280
+    moe_frequency: 1
+    expert_tp_degree: 1
+
+search:
+  num_devices: 32
+
+performance:
+  # The 700m MFU-validation runs used FULL activation recompute (confirmed from
+  # the rank0 traces: flash fwd:bwd kernel ratio is 2:1 -> forward re-executed in
+  # the backward). Must match what the validated runs ran, or predicted compute
+  # is ~1 fwd too low.
+  activation_checkpointing_type: full
+
+
+optimizer:
+  optimizer_type: scion
+data:
+  gbs: 2048
+  seqlen: 8192
+  microbatch_sz: 1
+
+hardware:
+  node_type: p6-b200.48xlarge

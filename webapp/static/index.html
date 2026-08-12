@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Performance Modeling Studio</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<header>
+  <h1>Performance Modeling Studio</h1>
+  <div class="header-row">
+    <label>Base config:
+      <select id="config-select"></select>
+    </label>
+    <button id="reset-btn">Reset to file</button>
+    <span id="status-pill" class="pill ok">ready</span>
+  </div>
+</header>
+
+<main>
+ <div class="col col-left">
+  <section class="panel" id="panel-model">
+    <h2>Model</h2>
+    <div class="grid-2">
+      <div class="slider-row" data-key="model.n_layers" data-min="1" data-max="128" data-step="1"><label>n_layers</label></div>
+      <div class="slider-row" data-key="model.hidden_sz" data-min="256" data-max="16384" data-step="128"><label>hidden_sz</label></div>
+      <div class="slider-row" data-key="model.inter_sz" data-min="256" data-max="40960" data-step="128"><label>inter_sz</label></div>
+      <div class="slider-row" data-key="model.n_q_heads" data-min="1" data-max="128" data-step="1"><label>n_q_heads</label></div>
+      <div class="slider-row" data-key="model.n_kv_heads" data-min="1" data-max="128" data-step="1"><label>n_kv_heads</label></div>
+      <div class="slider-row" data-key="model.head_dim" data-min="32" data-max="256" data-step="8"><label>head_dim</label></div>
+      <div class="slider-row" data-key="model.vocab_sz" data-min="1024" data-max="524288" data-step="128"><label>vocab_sz</label></div>
+      <div class="select-row" data-key="model.precision"><label>precision</label></div>
+      <div class="checkbox-row" data-key="model.glu"><label>glu (SwiGLU)</label></div>
+      <div class="checkbox-row" data-key="model.rotary_embeds"><label>rotary_embeds</label></div>
+      <div class="checkbox-row" data-key="model.dropout"><label>dropout</label></div>
+      <div class="checkbox-row" data-key="model.tie_embeddings"><label>tie_embeddings</label></div>
+    </div>
+    <h3>MoE</h3>
+    <div class="checkbox-row" data-key="model.moe.enabled"><label>MoE enabled</label></div>
+    <div class="grid-2 moe-fields">
+      <div class="slider-row" data-key="model.moe.n_experts" data-min="1" data-max="512" data-step="1"><label>n_experts</label></div>
+      <div class="slider-row" data-key="model.moe.experts_per_token" data-min="1" data-max="32" data-step="1"><label>experts_per_token (top-k)</label></div>
+      <div class="slider-row" data-key="model.moe.expert_inter_sz" data-min="256" data-max="20480" data-step="128"><label>expert_inter_sz</label></div>
+      <div class="slider-row" data-key="model.moe.capacity_factor" data-min="0.5" data-max="4" data-step="0.25"><label>capacity_factor</label></div>
+      <div class="slider-row" data-key="model.moe.moe_frequency" data-min="0" data-max="1" data-step="0.25"><label>moe_frequency</label></div>
+    </div>
+  </section>
+ </div>
+
+ <div class="col col-mid">
+  <section class="panel" id="panel-data">
+    <h2>Data &amp; Optimizer</h2>
+    <div class="grid-2">
+      <div class="slider-row" data-key="data.gbs" data-min="1" data-max="8192" data-step="1"><label>global_batch_size</label></div>
+      <div class="slider-row" data-key="data.seqlen" data-min="512" data-max="131072" data-step="512"><label>seqlen</label></div>
+      <div class="slider-row" data-key="data.microbatch_sz" data-min="1" data-max="16" data-step="1"><label>microbatch_sz</label></div>
+      <div class="select-row" data-key="optimizer.optimizer_type"><label>optimizer</label></div>
+      <div class="select-row" data-key="performance.activation_checkpointing_type"><label>activation_checkpointing_type</label></div>
+    </div>
+  </section>
+
+  <section class="panel" id="panel-hardware">
+    <h2>Hardware</h2>
+    <div class="grid-2">
+      <div class="select-row" data-key="hardware.node_type"><label>node_type</label></div>
+      <div class="slider-row" data-key="search.num_devices" data-min="1" data-max="4096" data-step="1"><label>num_devices</label></div>
+    </div>
+    <div id="hw-info" class="hw-info"></div>
+  </section>
+
+  <section class="panel" id="panel-parallelism">
+    <h2>Parallelism</h2>
+    <div class="par-help">
+      <span>Constraint: <code>tp · pp · cp · dp = num_devices</code></span>
+      <span class="par-product">Product: <span id="par-product">—</span></span>
+    </div>
+    <div class="grid-2">
+      <div class="select-row" data-key="parallelism.tp"><label>tp (tensor parallel)</label></div>
+      <div class="select-row" data-key="parallelism.pp"><label>pp (pipeline parallel)</label></div>
+      <div class="select-row" data-key="parallelism.cp"><label>cp (context parallel)</label></div>
+      <div class="readonly-row"><label>dp (data parallel, derived)</label><span id="dp-derived">—</span></div>
+      <div class="select-row" data-key="parallelism.ep"><label>ep (expert parallel)</label></div>
+      <div class="select-row" data-key="parallelism.etp"><label>etp (expert tp)</label></div>
+      <div class="slider-row" data-key="parallelism.zero_level" data-min="0" data-max="3" data-step="1"><label>zero_level</label></div>
+      <div class="slider-row" data-key="parallelism.n_param_buckets" data-min="1" data-max="32" data-step="1"><label>n_param_buckets</label></div>
+      <div class="checkbox-row" data-key="parallelism.sp"><label>sequence_parallel</label></div>
+    </div>
+  </section>
+ </div>
+
+ <div class="col col-right">
+  <section class="panel results-panel">
+    <h2>Live Results</h2>
+    <div id="error-box" class="error-box hidden"></div>
+    <div class="result-grid">
+      <div class="metric">
+        <div class="metric-label">MFU</div>
+        <div class="metric-value" id="m-mfu">—</div>
+        <div class="metric-sub" id="m-mfu-sub">model FLOPs utilization</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Iteration Time</div>
+        <div class="metric-value" id="m-iter">—</div>
+        <div class="metric-sub">per global step</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Throughput</div>
+        <div class="metric-value" id="m-tput">—</div>
+        <div class="metric-sub" id="m-tput-sub">tokens/sec</div>
+      </div>
+      <div class="metric memory-metric" id="m-mem-card">
+        <div class="metric-label">Memory / device</div>
+        <div class="metric-value" id="m-mem">—</div>
+        <div class="memory-bar"><div class="memory-fill" id="mem-fill"></div></div>
+        <div class="metric-sub" id="m-mem-sub">— of —</div>
+      </div>
+    </div>
+    <div class="charts-row">
+      <div class="chart-wrap"><canvas id="chart-tp"></canvas></div>
+      <div class="chart-wrap"><canvas id="chart-pp"></canvas></div>
+    </div>
+    <div class="heatmap-row">
+      <div class="heatmap-wrap">
+        <div class="heatmap-title">MFU% heatmap — tp × ep (pp=1, cp=1)</div>
+        <div class="heatmap-body" id="heatmap-tp-ep"><div class="hm-empty">computing…</div></div>
+      </div>
+      <div class="heatmap-wrap">
+        <div class="heatmap-title">MFU% heatmap — pp × ep (cp=1)</div>
+        <div class="heatmap-body" id="heatmap-pp-ep"><div class="hm-empty">computing…</div></div>
+      </div>
+    </div>
+  </section>
+ </div>
+
+  <section class="panel search-panel">
+    <h2>Find Optimal Configuration</h2>
+    <div class="search-controls">
+      <label>top_k <input type="number" id="search-top-k" value="10" min="1" max="100"></label>
+      <label>max_ep <input type="number" id="search-max-ep" value="32" min="1" max="512"></label>
+      <label>max_tp <input type="number" id="search-max-tp" value="" placeholder="auto"></label>
+      <label>max_cp <input type="number" id="search-max-cp" value="" placeholder="auto"></label>
+      <label>max_mbs <input type="number" id="search-max-mbs" value="1" min="1" max="16"></label>
+      <label>act_ckpt
+        <select id="search-act-ckpt">
+          <option value="all">all</option>
+          <option value="none">none</option>
+          <option value="selective">selective</option>
+          <option value="full">full</option>
+        </select>
+      </label>
+      <label>mem_limit_fraction <input type="number" id="search-mem-frac" value="0.9" min="0.1" max="1.0" step="0.05"></label>
+      <button id="search-btn" class="primary">Run Search</button>
+      <span id="search-status"></span>
+    </div>
+    <div class="table-wrap">
+      <table id="search-table">
+        <thead><tr>
+          <th>#</th><th>tp</th><th>pp</th><th>cp</th><th>dp</th><th>ep</th><th>etp</th>
+          <th>mbs</th><th>act_ckpt</th>
+          <th>MFU%</th><th>Mem GB</th><th>Mem %</th><th>Iter (s)</th><th>Tok/s</th><th></th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>

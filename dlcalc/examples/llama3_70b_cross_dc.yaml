@@ -1,0 +1,43 @@
+# Llama3-70B with Cross-DC Training
+model:
+  n_layers: 80
+  hidden_sz: 8192
+  inter_sz: 28672
+  n_q_heads: 64
+  n_kv_heads: 8
+  head_dim: 128
+  vocab_sz: 128256
+  precision: "bf16"  # Options: fp32, fp16, bf16, int8, fp8
+  glu: true
+  rotary_embeds: true
+  dropout: false
+  tie_embeddings: true
+
+parallelism:
+  tp: 8
+  pp: 2
+  dp: 512
+  vpp: 1
+  sp: true
+  zero_level: 1
+
+  n_param_buckets: 5
+
+performance:
+  activation_checkpointing_type: selective
+
+
+optimizer:
+  optimizer_type: muon
+data:
+  gbs: 16384
+  seqlen: 2048
+  microbatch_sz: 1
+
+hardware:
+  node_type: p4d.24xlarge
+
+cross_dc:
+  n_dcs: 2
+  interconnect_bandwidth_gbps: 100000
+  interconnect_latency_s: 0.005

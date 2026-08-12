@@ -1,0 +1,23 @@
+**/__pycache__
+dlcalc.egg-info
+refs
+configs/
+one-offs/
+lib/bindings
+lib/tom-select
+lib/vis-*
+build/
+
+# uv
+.venv/
+uv.lock
+
+# coverage
+.coverage
+.coverage.*
+htmlcov/
+*.cover
+.hypothesis/
+.pytest_cache/
+coverage.xml
+*.py,cover

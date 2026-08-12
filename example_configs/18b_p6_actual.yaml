@@ -1,0 +1,41 @@
+# 18B MoE (utm_moe ladder, rung 18b)
+# 17.82B params, 64-node P6 (world 512). Used as the arch base for the 18B
+# ground-truth CSV (dlcalc/tests/data/18b_real_mfu_P6_64node.csv), with per-row
+# tp/pp/ep/cp/dp overridden by the harness/plotter.
+model:
+  n_layers: 48              # num_layers
+  hidden_sz: 6144           # hidden_size (48 heads * 128 head_dim)
+  inter_sz: 15360           # ffn_hidden_size (dense; = 6144 * 2.5 mlp_expansion_ratio)
+  n_q_heads: 48             # num_attention_heads
+  n_kv_heads: 8             # num_query_groups (GQA)
+  head_dim: 128             # attn_head_size (kv_channels null -> hidden/heads = 128)
+  vocab_sz: 257540          # vocab_size
+  precision: "bf16"         # fp8: null -> bf16 GEMMs (B200 peak 2250 TFLOPS)
+  sdpa_precision: "bf16"
+  glu: true                 # activation swiglu
+  rotary_embeds: true       # position_embedding_type rope
+  dropout: false            # hidden/attention_dropout 0.0
+  tie_embeddings: false     # share_embeddings_and_output_weights: false
+  moe:
+    n_experts: 128          # num_moe_experts
+    experts_per_token: 3    # moe_router_topk
+    capacity_factor: 1      # moe_expert_capacity_factor: null (dropless) -> mean-load cf=1 approx
+    expert_inter_sz: 3840   # moe_ffn_hidden_size
+    moe_frequency: 1  # moe_layer_freq is [0,1,...,1] (layer 0 dense, 47/48 MoE);
+                      # approximated as all-MoE (1) — the single dense layer can't be
+                      # split across pp=8, and the enriched-data pipeline used 1.0 too.
+                      # ~2% of layers; negligible for MFU.
+    expert_tp_degree: 1     # expert_tensor_parallel_size
+    shared_expert_inter_sz: 3840  # moe_shared_expert_intermediate_size
+search:
+  num_devices: 512          # 64 nodes * 8 GPUs
+performance:
+  activation_checkpointing_type: full  # recompute_granularity: full (uniform, num_layers 1)
+optimizer:
+  optimizer_type: scion     # optim.config.optimizer: scion
+data:
+  gbs: 512                  # global_batch_size
+  seqlen: 8192              # seq_length
+  microbatch_sz: 1          # micro_batch_size
+hardware:
+  node_type: p6-b200.48xlarge

@@ -1,0 +1,33 @@
+data:
+  gbs: 96
+  microbatch_sz: 1
+  seqlen: 8192
+hardware:
+  node_type: p6-b200.48xlarge
+model:
+  dropout: false
+  glu: true
+  head_dim: 128
+  hidden_sz: 4096
+  inter_sz: 10240
+  moe:
+    capacity_factor: 1
+    expert_inter_sz: 2560
+    expert_tp_degree: 1
+    experts_per_token: 3
+    moe_frequency: 1
+    n_experts: 128
+  n_kv_heads: 8
+  n_layers: 32
+  n_q_heads: 32
+  precision: fp8
+  rotary_embeds: true
+  sdpa_precision: bf16
+  tie_embeddings: true
+  vocab_sz: 257536
+optimizer:
+  optimizer_type: muon
+performance:
+  activation_checkpointing_type: none
+search:
+  num_devices: 96

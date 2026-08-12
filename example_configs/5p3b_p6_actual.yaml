@@ -1,0 +1,43 @@
+model:
+  n_layers: 32  # 4 * s where s=8 for abc_moe_1_1
+  hidden_sz: 4096  # 32 heads * 128 head_dim
+  inter_sz: 10240  # 4096 * 2.5 (mlp_expansion_ratio)
+  n_q_heads: 32  # attn_head_multiplier * s
+  n_kv_heads: 8  # GQA (num_query_groups)
+  head_dim: 128
+  vocab_sz: 257536  # Make vocab size divisible by 128
+  precision: "bf16"  # FP8 E4M3
+  sdpa_precision: "bf16"  # SDPA uses BF16
+  glu: true  # SwiGLU activation
+  rotary_embeds: true
+  dropout: false
+  tie_embeddings: true  # share_embeddings_and_output_weights
+
+  moe:
+    n_experts: 128  # num_moe_experts: 32*4 (expert_granularity=4)
+    experts_per_token: 3  # moe_router_topk: 3 (expert_granularity)
+    capacity_factor: 1  # moe_expert_capacity_factor
+    expert_inter_sz: 2560  # moe_ffn_hidden_size: 10240/4
+    moe_frequency: 1  # all layers are MoE
+    expert_tp_degree: 1  # expert_model_parallel_size
+
+search:
+  num_devices: 512  # 64 nodes × 8 GPUs/node
+
+performance:
+  # The 5p3b MFU-validation runs used FULL activation recompute (confirmed from
+  # the rank0 trace 59423f6e: flash fwd:bwd kernel ratio 2:1 -> forward
+  # re-executed in the backward). Must match the validated runs.
+  activation_checkpointing_type: full
+
+
+optimizer:
+  optimizer_type: muon
+data:
+  gbs: 96  # global_batch_size (from notebook override)
+  seqlen: 8192  # seq_length
+  microbatch_sz: 1  # micro_batch_size (from notebook override)
+
+hardware:
+  node_type: p6-b200.48xlarge  # P6 with B200 GPUs
+

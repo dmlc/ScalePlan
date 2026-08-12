@@ -1,0 +1,38 @@
+model:
+  n_layers: 8
+  hidden_sz: 1024
+  inter_sz: 2560
+  n_q_heads: 8
+  n_kv_heads: 8
+  head_dim: 128
+  vocab_sz: 257540
+  precision: "fp8"
+  sdpa_precision: "bf16"
+  glu: true
+  rotary_embeds: true
+  dropout: false
+  tie_embeddings: false
+  moe:
+    n_experts: 128
+    experts_per_token: 3
+    capacity_factor: 1
+    expert_inter_sz: 640
+    moe_frequency: 1
+    expert_tp_degree: 1
+
+search:
+  num_devices: 32
+
+performance:
+  activation_checkpointing_type: none
+
+
+optimizer:
+  optimizer_type: muon
+data:
+  gbs: 96
+  seqlen: 8192
+  microbatch_sz: 1
+
+hardware:
+  node_type: p6-b200.48xlarge

@@ -1,0 +1,45 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.12.8
+    hooks:
+      - id: ruff-format
+        name: Check formatting with ruff
+        args: [--check, --diff]
+      - id: ruff
+        name: Lint with ruff
+        args: [--output-format=github]
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.17.1
+    hooks:
+      - id: mypy
+        name: Type check with mypy
+        files: ^dlcalc/.*\.py$
+        pass_filenames: false
+        args: [dlcalc/]
+        additional_dependencies:
+          - types-PyYAML>=6.0.1
+          - boto3-stubs[ec2]
+          - kubernetes-stubs
+
+  - repo: local
+    hooks:
+      - id: pytest
+        name: Run tests
+        entry: uv run pytest
+        language: system
+        pass_filenames: false
+        args: [tests/, -q]
+        types: [python]
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+        args: [--maxkb=1000]
+      - id: check-merge-conflict
+      - id: debug-statements
+        language_version: python3
