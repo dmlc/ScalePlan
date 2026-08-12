@@ -1,13 +1,19 @@
 # ScalePlan — LLM Runtime Performance Calculator with Parallelism Search
 
 [![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
-
 [![Paper](https://img.shields.io/badge/paper-arXiv%3A2608.10605-b31b1b.svg)](https://arxiv.org/pdf/2608.10605)
 
 Analytical performance modeling for large-scale MoE/Dense LLM training. ScalePlan
 predicts MFU (Model FLOPs Utilization), per-device memory, and iteration time for
 a given parallelism configuration, and searches the configuration space to find
 the best one for a target cluster.
+
+ScalePlan is the performance-modeling framework introduced in
+[*Compute-Optimal Is Not Cluster-Optimal: Systems-Aware Scaling for Sparse
+Mixture-of-Experts*](https://arxiv.org/pdf/2608.10605) (Sarkar, Tang, and Zha,
+2026), which couples this calculator with a scaling law to jointly select
+model architecture, token budget, and parallel layout under a fixed hardware
+budget (MOSAIC). See the paper for the full methodology and validation.
 
 ## Validation Against Real Runs
 
@@ -205,7 +211,9 @@ the scripts in `benchmarks/` (`sdpa_benchmark.py`, `gemm_grouped_benchmark.py`,
 GPUs; the parquet files are checked in so the model works without them.
 
 For how these predictions compare against real training runs, see
-[Validation Against Real Runs](#validation-against-real-runs).
+[Validation Against Real Runs](#validation-against-real-runs). For the full
+derivation of the performance model and its role in joint architecture-systems
+optimization, see the [paper](https://arxiv.org/pdf/2608.10605).
 
 ### Known Limitations
 
@@ -247,6 +255,19 @@ If every configuration exceeds the memory limit:
 - Reduce model size parameters in the YAML config
 - Raise `--memory-limit-fraction` (default `0.8`) if you want to use more of the device
 - Allow higher parallelism degrees, or enable activation checkpointing
+
+## Citation
+
+If you use ScalePlan in your research, please cite the paper it accompanies:
+
+```bibtex
+@article{sarkar2026mosaic,
+  title   = {Compute-Optimal Is Not Cluster-Optimal: Systems-Aware Scaling for Sparse Mixture-of-Experts},
+  author  = {Sarkar, Soumajyoti and Tang, Yuxin and Zha, Sheng},
+  journal = {arXiv preprint arXiv:2608.10605},
+  year    = {2026}
+}
+```
 
 ## License
 
